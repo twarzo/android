@@ -37,7 +37,10 @@ public class MainActivity extends ActionBarActivity  implements  ForecastFragmen
             }
         } else {
             mTwoPane = false;
+            getSupportActionBar().setElevation(0f);
         }
+        ForecastFragment forecastFragment = ((ForecastFragment) getSupportFragmentManager().findFragmentById(R.id.fragment_forecast));
+        forecastFragment.setUseTodayLayout(!mTwoPane);
     }
 
 
@@ -56,7 +59,7 @@ public class MainActivity extends ActionBarActivity  implements  ForecastFragmen
             fragment.setArguments(args);
             getSupportFragmentManager().beginTransaction().replace(R.id.weather_detail_container,fragment, DETAILFRAGMENT_TAG).commit();
         }else{
-            Intent intent = new Intent(this, DetailActivity.class);
+            Intent intent = new Intent(this, DetailActivity.class).setData(uri);
             startActivity(intent);
         }
     }
