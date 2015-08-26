@@ -39,13 +39,11 @@ public class WeatherProvider extends ContentProvider {
                         " = " + WeatherContract.LocationEntry.TABLE_NAME +
                         "." + WeatherContract.LocationEntry._ID);
     }
-    public WeatherProvider(Context context){
-        mContext = context;
-        mOpenHelper = new WeatherDbHelper(mContext);
-    }
     public WeatherProvider(){
-
+        mContext = getContext();
+        mOpenHelper = new WeatherDbHelper(getContext());
     }
+
     //location.location_setting = ?
     private static final String sLocationSettingSelection =
             WeatherContract.LocationEntry.TABLE_NAME+
@@ -245,7 +243,7 @@ public class WeatherProvider extends ContentProvider {
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
-        mContext.getContentResolver().notifyChange(uri, null);
+        getContext().getContentResolver().notifyChange(uri, null);
         db.close();
         return returnUri;
     }
@@ -327,7 +325,7 @@ public class WeatherProvider extends ContentProvider {
 
         // Student: return the actual rows deleted
         if(rowsUpdated != 0){
-            mContext.getContentResolver().notifyChange(uri,null);
+            getContext().getContentResolver().notifyChange(uri,null);
         }
         return rowsUpdated;
     }
@@ -352,7 +350,7 @@ public class WeatherProvider extends ContentProvider {
                 } finally {
                     db.endTransaction();
                 }
-                mContext.getContentResolver().notifyChange(uri, null);
+                getContext().getContentResolver().notifyChange(uri, null);
                 return returnCount;
             default:
                 return super.bulkInsert(uri, values);

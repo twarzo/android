@@ -65,7 +65,7 @@ public class DetailActivityFragment extends Fragment implements android.support.
     private static final int COL_WEATHER_PRESSURE = 6;
     private static final int COL_WEATHER_WIND_SPEED = 7;
     private static final int COL_WEATHER_DEGREES = 8;
-    private static final int COL_WEATHER_WEATHER_ID = 9;
+    private static final int COL_WEATHER_CONDITION_ID = 9;
     private static final int COL_LOCATION_SETTING = 10;
     private String mForecast;
     private Uri mUri;
@@ -75,7 +75,7 @@ public class DetailActivityFragment extends Fragment implements android.support.
         setHasOptionsMenu(true);
     }
 
-    @Override
+   /* @Override
     public void onCreate(Bundle savedInstanceState){
         super.onCreate(savedInstanceState);
         if(savedInstanceState == null){
@@ -86,16 +86,16 @@ public class DetailActivityFragment extends Fragment implements android.support.
             getFragmentManager().beginTransaction().add(R.id.weather_detail_container, detailActivityFragment).commit();
         }
     }
+    */
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         Bundle arguments = getArguments();
         if(arguments != null){
-            mUri = arguments.getParcelable(DetailActivityFragment.DETAIL_URI);
+            mUri = arguments.getParcelable(DETAIL_URI);
         }
-        Intent intent = getActivity().getIntent();
         View rootView = inflater.inflate(R.layout.fragment_detail, container, false);
-        mIconView = (ImageView) rootView.findViewById(R.id.detail__icon);
+        mIconView = (ImageView) rootView.findViewById(R.id.detail_icon);
         mDateView = (TextView) rootView.findViewById(R.id.detail_date_textview);
         mFriendlyDateView = (TextView) rootView.findViewById(R.id.detail_day_textview);
         mDescriptionView = (TextView) rootView.findViewById(R.id.detail_forecast_textview);
@@ -108,16 +108,11 @@ public class DetailActivityFragment extends Fragment implements android.support.
         return rootView;
     }
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        getLoaderManager().initLoader(DETAIL_LOADER, null, this);
-        super.onActivityCreated(savedInstanceState);
-    }
-    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater){
         menuInflater.inflate(R.menu.detailfragment, menu);
         MenuItem menuItem = menu.findItem(R.id.action_share);
         mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(menuItem);
-        if(mShareActionProvider != null){
+        if(mForecast != null){
             mShareActionProvider.setShareIntent(createShareForecastIntent());
         }
         else{
@@ -128,10 +123,29 @@ public class DetailActivityFragment extends Fragment implements android.support.
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT,mForecast+FORECAST_SHARE_HASHTAG);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, mForecast + FORECAST_SHARE_HASHTAG);
         return shareIntent;
 
     }
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        getLoaderManager().initLoader(DETAIL_LOADER, null, this);
+        super.onActivityCreated(savedInstanceState);
+    }
+
+    void onLocationChanged( String newLocation ) {
+        // replace the uri, since the location has changed
+        Uri uri = mUri;
+        if (null != uri) {
+            String dateStr = WeatherContract.WeatherEntry.getDateFromUri(uri);
+            long date = Long.valueOf(dateStr);
+            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation, dateStr);
+            mUri = updatedUri;
+            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
+        }
+    }
+
+
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args){
@@ -155,7 +169,7 @@ public class DetailActivityFragment extends Fragment implements android.support.
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         Log.v(LOG_TAG, "In onLoadFinished");
         if (data != null && data.moveToFirst()) {
-            int weatherId = data.getInt(data.getColumnIndex(WeatherContract.WeatherEntry.COLUMN_WEATHER_ID));
+            int weatherId = data.getInt(COL_WEATHER_CONDITION_ID);
             long date = data.getLong(COL_WEATHER_DATE);
             String friendlyDateText = Utility.getDayName(getActivity(), date);
             String dateText = Utility.getFormattedMonthDay(getActivity(), date);
@@ -184,6 +198,7 @@ public class DetailActivityFragment extends Fragment implements android.support.
             mFriendlyDateView.setText(friendlyDateText);
             mDateView.setText(dateText);
             mIconView.setImageResource(imageResource);
+            mIconView.setContentDescription(weatherDescription);
             mHighTempView.setText(high);
             mLowTempView.setText(low);
             mHumidityView.setText(String.format("Humidity : %s %% ", humidity));
@@ -203,16 +218,6 @@ public class DetailActivityFragment extends Fragment implements android.support.
     public void onLoaderReset(Loader<Cursor> loader){
 
     }
-    void onLocationChanged( String newLocation ) {
-        // replace the uri, since the location has changed
-        Uri uri = mUri;
-        if (null != uri) {
-            String dateStr = WeatherContract.WeatherEntry.getDateFromUri(uri);
-            long date = Long.valueOf(dateStr);
-            Uri updatedUri = WeatherContract.WeatherEntry.buildWeatherLocationWithDate(newLocation, dateStr);
-            mUri = updatedUri;
-            getLoaderManager().restartLoader(DETAIL_LOADER, null, this);
-        }
-    }
+
 
 }
